@@ -54,12 +54,47 @@ const Dashboard: React.FC = () => {
   const navigation = useNavigation();
 
   async function handleNavigate(id: number): Promise<void> {
-    // Navigate do ProductDetails page
+    navigation.navigate('FoodDetails', { id });
   }
 
   useEffect(() => {
     async function loadFoods(): Promise<void> {
-      // Load Foods from API
+      const searchParams = {};
+
+      if (selectedCategory) {
+        Object.assign(searchParams, {
+          ...searchParams,
+          category_like: selectedCategory,
+        });
+      }
+
+      if (searchValue) {
+        Object.assign(searchParams, {
+          ...searchParams,
+          name_like: searchValue,
+        });
+      }
+
+      console.log(searchParams);
+
+      const responseFoods = await api.get<Food[]>('/foods', {
+        params: searchParams,
+      });
+      const foodsData = responseFoods.data;
+
+      if (!foodsData) {
+        console.log('Error: erro ao retornar foods');
+        return;
+      }
+
+      const formattedPriceFoods = foodsData.map(food => {
+        return {
+          ...food,
+          formattedPrice: formatValue(food.price),
+        };
+      });
+
+      setFoods(formattedPriceFoods);
     }
 
     loadFoods();
@@ -67,14 +102,22 @@ const Dashboard: React.FC = () => {
 
   useEffect(() => {
     async function loadCategories(): Promise<void> {
-      // Load categories from API
+      const responseCategories = await api.get('categories');
+
+      const categoriesData = responseCategories.data;
+
+      if (!categoriesData) {
+        console.log('Error: erro ao retornar categories');
+      }
+
+      setCategories(categoriesData);
     }
 
     loadCategories();
   }, []);
 
   function handleSelectCategory(id: number): void {
-    // Select / deselect category
+    setSelectedCategory(id === selectedCategory ? undefined : id);
   }
 
   return (
